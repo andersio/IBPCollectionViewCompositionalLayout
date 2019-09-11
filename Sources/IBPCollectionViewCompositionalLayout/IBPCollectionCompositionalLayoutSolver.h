@@ -16,7 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
                         scrollDirection:(UICollectionViewScrollDirection)scrollDirection;
 
 - (void)solveForContainer:(IBPNSCollectionLayoutContainer *)container
-          traitCollection:(UITraitCollection *)traitCollection;
+          traitCollection:(UITraitCollection *)traitCollection
+  numberOfItemsInSections:(NSInteger)itemCount;
 
 - (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath;
 - (IBPNSCollectionLayoutItem *)layoutItemAtIndexPath:(NSIndexPath *)indexPath;

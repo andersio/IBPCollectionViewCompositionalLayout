@@ -8,6 +8,7 @@
 #import "IBPNSCollectionLayoutSection_Private.h"
 #import "IBPNSCollectionLayoutSize_Private.h"
 #import "IBPNSCollectionLayoutSpacing.h"
+#import "IBPUICollectionViewCompositionalLayoutAttributes.h"
 
 @interface IBPCollectionCompositionalLayoutSolver()
 
@@ -282,7 +283,7 @@
     }
 }
 
-- (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
+- (IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
     NSArray<IBPCollectionCompositionalLayoutSolverResult *> *results = self.results;
     NSInteger count = results.count;
 
@@ -301,13 +302,15 @@
         offset.x += CGRectGetWidth(self.layoutFrame) * (indexPath.item / count) + interGroupSpacing * (indexPath.item / count);
     }
 
-    UICollectionViewLayoutAttributes *layoutAttributes = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+    IBPUICollectionViewCompositionalLayoutAttributes *layoutAttributes = [IBPUICollectionViewCompositionalLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
     IBPCollectionCompositionalLayoutSolverResult *result = [results objectAtIndex:indexPath.item % count];
 
     CGRect frame = result.frame;
     frame.origin.x += offset.x;
     frame.origin.y += offset.y;
     layoutAttributes.frame = frame;
+
+    layoutAttributes.layoutSize = [[result layoutItem] size];
 
     return layoutAttributes;
 }

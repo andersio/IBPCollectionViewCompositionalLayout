@@ -167,6 +167,16 @@
     return YES;
 }
 
+- (NSInteger)leafItemCount {
+    __block NSInteger leafItemCount = 0;
+
+    [self enumerateItemsWithHandler:^(IBPNSCollectionLayoutItem * _Nonnull item, BOOL * _Nonnull stop) {
+        leafItemCount += item.leafItemCount;
+    }];
+
+    return leafItemCount;
+}
+
 - (void)enumerateItemsWithHandler:(void (^__nonnull)(IBPNSCollectionLayoutItem * _Nonnull item, BOOL *stop))handler {
     NSEnumerator<IBPNSCollectionLayoutItem *> *enumerator = self.subitems.objectEnumerator;
     IBPNSCollectionLayoutItem *item = enumerator.nextObject;
@@ -177,10 +187,6 @@
             break;
         }
         item = enumerator.nextObject;
-        if (!item) {
-            enumerator = self.subitems.objectEnumerator;
-            item = enumerator.nextObject;
-        }
     }
 }
 
