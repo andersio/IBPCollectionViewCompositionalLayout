@@ -12,13 +12,13 @@ typedef IBPUICollectionViewCompositionalLayoutAttributes LayoutAttributes;
     UICollectionViewLayoutAttributes *preferred = [self ibp_originalPreferredLayoutAttributesFittingAttributes:layoutAttributes];
 
     if ([preferred isKindOfClass:[LayoutAttributes class]]) {
-        [self updateLayoutAttributes:(LayoutAttributes *) layoutAttributes];
+        [self updateLayoutAttributes:(LayoutAttributes *)preferred withOriginalAttributes:layoutAttributes];
     }
 
     return preferred;
 }
 
-- (void)updateLayoutAttributes:(LayoutAttributes *)attributes {
+- (void)updateLayoutAttributes:(LayoutAttributes *)attributes withOriginalAttributes:(LayoutAttributes *)originalAttributes {
     if (![attributes isEstimated]) {
         return;
     }
@@ -26,7 +26,7 @@ typedef IBPUICollectionViewCompositionalLayoutAttributes LayoutAttributes;
     IBPNSCollectionLayoutSize *layoutSize = [attributes layoutSize];
 
     UIView *sizingView = ([self isKindOfClass:[UICollectionViewCell class]] ? [(UICollectionViewCell *)self contentView] : self);
-    CGRect frame = attributes.frame;
+    CGRect frame = originalAttributes.frame;
     CGSize querySize = frame.size;
     UILayoutPriority horizontalFittingPriority = UILayoutPriorityRequired;
     UILayoutPriority verticalFittingPriority = UILayoutPriorityRequired;

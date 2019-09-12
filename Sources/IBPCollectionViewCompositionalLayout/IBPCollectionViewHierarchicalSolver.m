@@ -89,6 +89,8 @@
 }
 
 -(void)updateSolvedSizeIfNeeded {
+    assert(!_layoutItem.isGroup);
+
     if (_hasPreferredSize) {
         if (_layoutItem.layoutSize.widthDimension.isEstimated) {
             _solvedSize.width = _preferredSize.width;
@@ -101,7 +103,6 @@
 }
 
 -(NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
-                                                                                           itemIndex:(NSInteger)itemIndex
                                                                                         sectionIndex:(NSInteger)sectionIndex {
     CGRect localVisibleRect = rect;
     localVisibleRect.origin.x -= _originInParent.x;
@@ -111,14 +112,10 @@
     allAttributes = [[NSMutableArray alloc] init];
 
     if (_layoutItem.isGroup) {
-        __block NSInteger itemCursor = itemIndex;
-
         [_children enumerateObjectsUsingBlock:^(IBPCollectionViewHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
             if (CGRectIntersectsRect(solver.frame, localVisibleRect)) {
                 [allAttributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:localVisibleRect
-                                                                                      itemIndex:itemCursor
                                                                                    sectionIndex:sectionIndex]];
-                itemCursor += solver.layoutItem.leafItemCount;
             }
         }];
 
@@ -129,9 +126,10 @@
         }];
     } else {
         IBPUICollectionViewCompositionalLayoutAttributes *attributes;
-        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:itemIndex inSection:sectionIndex];
+        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:_locationInSection.location inSection:sectionIndex];
         attributes = [IBPUICollectionViewCompositionalLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
         attributes.frame = self.frame;
+        attributes.layoutSize = !_hasPreferredSize ? self.layoutItem.layoutSize : nil;
 
         [allAttributes addObject:attributes];
     }
@@ -139,31 +137,13 @@
     return allAttributes;
 }
 
--(IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
-    assert(NSLocationInRange(indexPath.item, _locationInSection));
-    __block IBPUICollectionViewCompositionalLayoutAttributes *attributes;
-
-    if (_layoutItem.isGroup) {
-        [_children enumerateObjectsUsingBlock:^(IBPCollectionViewHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
-            if (NSLocationInRange(indexPath.item, solver.locationInSection)) {
-                attributes = [solver layoutAttributesForItemAtIndexPath:indexPath];
-                *stop = YES;
-            }
-        }];
-    } else {
-        attributes = [IBPUICollectionViewCompositionalLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
-        attributes.frame = self.frame;
-    }
-
-    if (!attributes) {
-        abort();
-    }
-
-    return attributes;
-}
-
 - (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex {
     if (![_layoutItem isGroup]) {
+        if (self.hasPreferredSize) {
+            // Reject a new preferred size if a preferred size has been set & has not been invalidated.
+            return CGVectorZero;
+        }
+
         self->_hasPreferredSize = YES;
         self->_preferredSize = preferredSize;
 

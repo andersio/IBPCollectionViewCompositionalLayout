@@ -33,7 +33,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath;
 
 - (NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
-                                                                                            itemIndex:(NSInteger)itemIndex
                                                                                          sectionIndex:(NSInteger)sectionIndex;
 
 @end

@@ -94,14 +94,10 @@
     __block NSMutableArray<IBPUICollectionViewCompositionalLayoutAttributes *> *allAttributes;
     allAttributes = [[NSMutableArray alloc] init];
 
-    __block NSInteger itemCursor = itemIndex;
-
     [_children enumerateObjectsUsingBlock:^(IBPCollectionViewHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
         if (CGRectIntersectsRect(solver.frame, localVisibleRect)) {
             [allAttributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:localVisibleRect
-                                                                                  itemIndex:itemCursor
                                                                                sectionIndex:sectionIndex]];
-            itemCursor += solver.layoutItem.leafItemCount;
         }
     }];
 

@@ -457,11 +457,29 @@ NSInteger BoundaryItemIndex = 0;
     [super invalidateLayoutWithContext:context];
 }
 
+- (UICollectionViewLayoutInvalidationContext *)invalidationContextForPreferredLayoutAttributes:(UICollectionViewLayoutAttributes *)preferredAttributes
+                                                                        withOriginalAttributes:(UICollectionViewLayoutAttributes *)originalAttributes {
+    UICollectionViewLayoutInvalidationContext *context;
+    context = [super invalidationContextForPreferredLayoutAttributes:preferredAttributes
+                                              withOriginalAttributes:originalAttributes];
+
+    return context;
+}
+
 - (BOOL)shouldInvalidateLayoutForPreferredLayoutAttributes:(LayoutAttributes *)preferredAttributes withOriginalAttributes:(LayoutAttributes *)originalAttributes {
     NSIndexPath *indexPath = preferredAttributes.indexPath;
     CGVector delta = [sectionSolvers[indexPath.section] setPreferredSize:preferredAttributes.size forItemAtIndex:indexPath.item];
 
     if (!CGVectorEqual(delta, CGVectorZero)) {
+        switch (self.scrollDirection) {
+            case UICollectionViewScrollDirectionVertical:
+                contentFrame.size.height += delta.dy;
+                break;
+            case UICollectionViewScrollDirectionHorizontal:
+                contentFrame.size.width += delta.dx;
+                break;
+        }
+
         for (NSInteger i = indexPath.section + 1; i < sectionSolvers.count; i++) {
             IBPCollectionViewHierarchicalSectionSolver *solver = sectionSolvers[i];
 
