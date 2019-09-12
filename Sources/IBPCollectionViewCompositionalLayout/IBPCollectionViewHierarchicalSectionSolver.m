@@ -11,6 +11,7 @@
 #import "IBPNSCollectionLayoutSize.h"
 #import "IBPNSCollectionLayoutSize_Private.h"
 #import "IBPNSCollectionLayoutDimension.h"
+#import "CGVectorExtensions.h"
 
 @interface IBPCollectionViewHierarchicalSectionSolver (Private)
 
@@ -117,13 +118,46 @@
     return [self layoutAttributesForItemInVisibleRect:rect itemIndex:0 sectionIndex:sectionIndex];
 }
 
--(IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
-    __block IBPUICollectionViewCompositionalLayoutAttributes *attributes;
-    return nil;
-}
+- (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex {
+    CGVector delta = CGVectorZero;
+    NSInteger solverIndex = 0;
 
-- (void)setPreferredSize:(CGRect)preferredSize forItemAtIndex:(NSInteger)itemIndex {
+    for (solverIndex = 0; solverIndex < _children.count; solverIndex++) {
+        IBPCollectionViewHierarchicalSolver *solver = _children[solverIndex];
 
+        if (NSLocationInRange(itemIndex, solver.locationInSection)) {
+            delta = [solver setPreferredSize:preferredSize forItemAtIndex:itemIndex];
+            break;
+        }
+    }
+
+    if (!CGVectorEqual(delta, CGVectorZero)) {
+        for (NSInteger i = solverIndex + 1; i < _children.count; i++) {
+            IBPCollectionViewHierarchicalSolver *solver = _children[i];
+
+            switch (_layoutAxis) {
+                case UICollectionViewScrollDirectionHorizontal:
+                    solver.originInParent = CGPointOffsetX(delta.dx, solver.originInParent);
+                    break;
+                case UICollectionViewScrollDirectionVertical:
+                    solver.originInParent = CGPointOffsetY(delta.dy, solver.originInParent);
+                    break;
+            }
+        }
+
+        // Recompute the bounds.
+        CGRect bounds = CGRectZero;
+
+        for (IBPCollectionViewHierarchicalSolver *solver in _children) {
+            bounds = CGRectUnion(bounds, solver.frame);
+        }
+
+        CGSize oldSize = _solvedSize;
+        _solvedSize = bounds.size;
+        return CGVectorMake(_solvedSize.width - oldSize.width, _solvedSize.height - oldSize.height);
+    }
+
+    return CGVectorZero;
 }
 
 - (void)createChildrenForCount:(NSInteger)count {
@@ -138,7 +172,6 @@
 
         IBPCollectionViewHierarchicalSolver *childSolver;
         childSolver = [IBPCollectionViewHierarchicalSolver solverWithLayoutItem:group
-                                                                     layoutAxis:self->_layoutAxis
                                                               locationInSection:localRange];
         [children addObject:childSolver];
     }

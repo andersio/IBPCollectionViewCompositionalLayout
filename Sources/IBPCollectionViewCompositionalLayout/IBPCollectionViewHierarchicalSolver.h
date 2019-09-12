@@ -22,22 +22,20 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) BOOL hasPreferredSize;
 @property (nonatomic, readonly) CGSize preferredSize;
 
-@property (nonatomic) UICollectionViewScrollDirection layoutAxis;
-
 +(instancetype)solverWithLayoutItem:(IBPNSCollectionLayoutItem *)layoutItem
-                         layoutAxis:(UICollectionViewScrollDirection)layoutAxis
                   locationInSection:(NSRange)locationInSection;
 
 - (void)solveForContainer:(IBPNSCollectionLayoutContainer *)container
              traitCollection:(UITraitCollection *)traitCollection;
 
-- (void)setPreferredSize:(CGRect)preferredSize forItemAtIndex:(NSInteger)itemIndex;
+- (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex;
 
 - (IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath;
 
 - (NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
                                                                                             itemIndex:(NSInteger)itemIndex
                                                                                          sectionIndex:(NSInteger)sectionIndex;
+
 @end
 
 NS_ASSUME_NONNULL_END

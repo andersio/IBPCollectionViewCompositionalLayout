@@ -26,9 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)solveForContainer:(IBPNSCollectionLayoutContainer *)container
              traitCollection:(UITraitCollection *)traitCollection;
 
-- (void)setPreferredSize:(CGRect)preferredSize forItemAtIndex:(NSInteger)itemIndex;
+- (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex;
 
-- (IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath;
 - (NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect forSectionAtIndex:(NSInteger)sectionIndex;
 
 @end

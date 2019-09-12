@@ -19,6 +19,7 @@
 #import <objc/runtime.h>
 #import "IBPCollectionViewHierarchicalSolver.h"
 #import "IBPCollectionViewHierarchicalSectionSolver.h"
+#import "CGVectorExtensions.h"
 
 typedef IBPUICollectionViewCompositionalLayoutAttributes LayoutAttributes;
 NSInteger BoundaryItemIndex = 0;
@@ -457,21 +458,27 @@ NSInteger BoundaryItemIndex = 0;
 }
 
 - (BOOL)shouldInvalidateLayoutForPreferredLayoutAttributes:(LayoutAttributes *)preferredAttributes withOriginalAttributes:(LayoutAttributes *)originalAttributes {
-    LayoutAttributes *cachedAttributes = nil;
+    NSIndexPath *indexPath = preferredAttributes.indexPath;
+    CGVector delta = [sectionSolvers[indexPath.section] setPreferredSize:preferredAttributes.size forItemAtIndex:indexPath.item];
 
-    if (!cachedAttributes) {
+    if (!CGVectorEqual(delta, CGVectorZero)) {
+        for (NSInteger i = indexPath.section + 1; i < sectionSolvers.count; i++) {
+            IBPCollectionViewHierarchicalSectionSolver *solver = sectionSolvers[i];
+
+            switch (self.scrollDirection) {
+                case UICollectionViewScrollDirectionVertical:
+                    solver.originInParent = CGPointOffsetY(delta.dy, solver.originInParent);
+                    break;
+                case UICollectionViewScrollDirectionHorizontal:
+                    solver.originInParent = CGPointOffsetX(delta.dx, solver.originInParent);
+                    break;
+            }
+        }
+
+        return YES;
+    } else {
         return NO;
     }
-
-    BOOL shouldInvalidate = [cachedAttributes isEstimated]
-        && !CGSizeEqualToSize([preferredAttributes size], [cachedAttributes size]);
-
-    if (shouldInvalidate) {
-        [cachedAttributes updateLayoutSizeWithPreferredAttributes:preferredAttributes];
-        return YES;
-    }
-
-    return NO;
 }
 
 - (CGPoint)targetContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset withScrollingVelocity:(CGPoint)velocity {

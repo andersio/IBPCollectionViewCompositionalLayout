@@ -8,26 +8,26 @@
 #import "IBPNSCollectionLayoutSize.h"
 #import "IBPNSCollectionLayoutSize_Private.h"
 #import "IBPNSCollectionLayoutDimension.h"
+#import "CGVectorExtensions.h"
 
 @interface IBPCollectionViewHierarchicalSolver (Private)
 
 -(void)createChildren;
 -(void)solveItemForProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
 -(void)solveGroup:(IBPNSCollectionLayoutGroup*)group forProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
+-(void)updateSolvedSizeIfNeeded;
 
 @end
 
 @implementation IBPCollectionViewHierarchicalSolver
 
 +(instancetype)solverWithLayoutItem:(IBPNSCollectionLayoutItem *)layoutItem
-                         layoutAxis:(UICollectionViewScrollDirection)layoutAxis
                   locationInSection:(NSRange)locationInSection {
     IBPCollectionViewHierarchicalSolver *solver = [[self alloc] init];
 
     if (solver) {
         solver->_hasPreferredSize = NO;
         solver->_preferredSize = CGSizeZero;
-        solver->_layoutAxis = layoutAxis;
         solver->_locationInSection = locationInSection;
         solver.layoutItem = layoutItem;
 
@@ -84,19 +84,20 @@
 
 -(void)solveItemForContainer:(IBPNSCollectionLayoutContainer *)container
              traitCollection:(UITraitCollection *)traitCollection {
-    CGSize effectiveSize = [[_layoutItem layoutSize] effectiveSizeForContainer:container];
+    _solvedSize = [[_layoutItem layoutSize] effectiveSizeForContainer:container];
+    [self updateSolvedSizeIfNeeded];
+}
 
+-(void)updateSolvedSizeIfNeeded {
     if (_hasPreferredSize) {
         if (_layoutItem.layoutSize.widthDimension.isEstimated) {
-            effectiveSize.width = _preferredSize.width;
+            _solvedSize.width = _preferredSize.width;
         }
 
         if (_layoutItem.layoutSize.heightDimension.isEstimated) {
-            effectiveSize.height = _preferredSize.height;
+            _solvedSize.height = _preferredSize.height;
         }
     }
-
-    _solvedSize = effectiveSize;
 }
 
 -(NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
@@ -161,8 +162,58 @@
     return attributes;
 }
 
-- (void)setPreferredSize:(CGRect)preferredSize forItemAtIndex:(NSInteger)itemIndex {
-    
+- (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex {
+    if (![_layoutItem isGroup]) {
+        self->_hasPreferredSize = YES;
+        self->_preferredSize = preferredSize;
+
+        CGSize oldSize = _solvedSize;
+        [self updateSolvedSizeIfNeeded];
+        CGSize newSize = _solvedSize;
+
+        return CGVectorMake(newSize.width - oldSize.width, newSize.height - oldSize.height);
+    }
+
+    IBPNSCollectionLayoutGroup *group = (typeof(group)) _layoutItem;
+
+    CGVector delta = CGVectorZero;
+    NSInteger solverIndex = 0;
+
+    for (solverIndex = 0; solverIndex < _children.count; solverIndex++) {
+        IBPCollectionViewHierarchicalSolver *solver = _children[solverIndex];
+
+        if (NSLocationInRange(itemIndex, solver.locationInSection)) {
+            delta = [solver setPreferredSize:preferredSize forItemAtIndex:itemIndex];
+            break;
+        }
+    }
+
+    if (!CGVectorEqual(delta, CGVectorZero)) {
+        for (NSInteger i = solverIndex + 1; i < _children.count; i++) {
+            IBPCollectionViewHierarchicalSolver *solver = _children[i];
+
+            if ([group isHorizontalGroup]) {
+                solver.originInParent = CGPointOffsetX(delta.dx, solver.originInParent);
+            }
+
+            if ([group isVerticalGroup]) {
+                solver.originInParent = CGPointOffsetY(delta.dy, solver.originInParent);
+            }
+        }
+
+        // Recompute the bounds.
+        CGRect bounds = CGRectZero;
+
+        for (IBPCollectionViewHierarchicalSolver *solver in _children) {
+            bounds = CGRectUnion(bounds, solver.frame);
+        }
+
+        CGSize oldSize = _solvedSize;
+        _solvedSize = bounds.size;
+        return CGVectorMake(_solvedSize.width - oldSize.width, _solvedSize.height - oldSize.height);
+    }
+
+    return CGVectorZero;
 }
 
 - (void)createChildren {
@@ -178,7 +229,6 @@
             cursor += leafItemCount;
 
             IBPCollectionViewHierarchicalSolver *childSolver = [IBPCollectionViewHierarchicalSolver solverWithLayoutItem:item
-                                                                                                              layoutAxis:self->_layoutAxis
                                                                                                        locationInSection:localRange];
             [children addObject:childSolver];
 
