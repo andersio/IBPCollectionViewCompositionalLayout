@@ -6,10 +6,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface IBPCollectionViewHierarchicalSolver : NSObject
+@interface IBPHierarchicalSolver : NSObject
 
 @property (nonatomic, strong) IBPNSCollectionLayoutItem *layoutItem;
-@property (nonatomic, strong) NSMutableArray<IBPCollectionViewHierarchicalSolver *> *children;
 @property (nonatomic) NSRange locationInSection;
 
 // Frame (in parent coordinate space).
@@ -18,19 +17,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, readonly) CGRect frame;
 
-// Capture the preferred size reported by the UICollectionView.
-@property (nonatomic, readonly) BOOL hasPreferredSize;
-@property (nonatomic, readonly) CGSize preferredSize;
-
-+(instancetype)solverWithLayoutItem:(IBPNSCollectionLayoutItem *)layoutItem
-                  locationInSection:(NSRange)locationInSection;
++(IBPHierarchicalSolver *)solverWithLayoutItem:(IBPNSCollectionLayoutItem *)layoutItem
+                                           locationInSection:(NSRange)locationInSection;
 
 - (void)solveForContainer:(IBPNSCollectionLayoutContainer *)container
              traitCollection:(UITraitCollection *)traitCollection;
 
 - (CGVector)setPreferredSize:(CGSize)preferredSize forItemAtIndex:(NSInteger)itemIndex;
-
-- (IBPUICollectionViewCompositionalLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath;
 
 - (NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
                                                                                          sectionIndex:(NSInteger)sectionIndex;

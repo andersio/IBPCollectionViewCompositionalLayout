@@ -3,14 +3,14 @@
 #import "IBPNSCollectionLayoutSection.h"
 #import "IBPNSCollectionLayoutContainer.h"
 #import "IBPUICollectionViewCompositionalLayoutAttributes.h"
-#import "IBPCollectionViewHierarchicalSolver.h"
+#import "IBPHierarchicalSolver.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface IBPCollectionViewHierarchicalSectionSolver : NSObject
+@interface IBPSectionSolver : NSObject
 
 @property (nonatomic, strong) IBPNSCollectionLayoutSection *layoutSection;
-@property (nonatomic, strong) NSMutableArray<IBPCollectionViewHierarchicalSolver *> *children;
+@property (nonatomic, strong) NSMutableArray<IBPHierarchicalSolver *> *children;
 
 // Frame (in parent coordinate space).
 @property (nonatomic) CGSize solvedSize;

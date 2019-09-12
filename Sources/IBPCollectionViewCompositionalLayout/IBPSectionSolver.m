@@ -1,5 +1,5 @@
-#import "IBPCollectionViewHierarchicalSectionSolver.h"
-#import "IBPCollectionViewHierarchicalSolver.h"
+#import "IBPSectionSolver.h"
+#import "IBPHierarchicalSolver.h"
 #import "IBPNSCollectionLayoutItem.h"
 #import "IBPNSCollectionLayoutItem_Private.h"
 #import "IBPNSCollectionLayoutSection.h"
@@ -13,20 +13,18 @@
 #import "IBPNSCollectionLayoutDimension.h"
 #import "CGVectorExtensions.h"
 
-@interface IBPCollectionViewHierarchicalSectionSolver (Private)
+@interface IBPSectionSolver (Private)
 
 -(void)createChildrenForCount:(NSInteger)count;
--(void)solveItemForProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
--(void)solveGroup:(IBPNSCollectionLayoutGroup*)group forProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
 
 @end
 
-@implementation IBPCollectionViewHierarchicalSectionSolver
+@implementation IBPSectionSolver
 
 +(instancetype)solverWithLayoutSection:(IBPNSCollectionLayoutSection *)layoutSection
                             layoutAxis:(UICollectionViewScrollDirection)layoutAxis
                          numberOfItems:(NSInteger)numberOfItems {
-    IBPCollectionViewHierarchicalSectionSolver *solver = [[self alloc] init];
+    IBPSectionSolver *solver = [[self alloc] init];
 
     if (solver) {
         solver.layoutSection = layoutSection;
@@ -55,15 +53,13 @@
 }
 
 -(void)solveForContainer:(IBPNSCollectionLayoutContainer *)container traitCollection:(UITraitCollection *)traitCollection {
-    CGSize containerSize = container.effectiveContentSize;
-
     IBPNSCollectionLayoutContainer *childContainer;
     childContainer = [[IBPNSCollectionLayoutContainer alloc] initWithContentSize:container.effectiveContentSize contentInsets:IBPNSDirectionalEdgeInsetsZero];
 
     CGPoint layoutOrigin = CGPointZero;
     CGRect finalBounds = CGRectZero;
 
-    for (IBPCollectionViewHierarchicalSolver *solver in _children) {
+    for (IBPHierarchicalSolver *solver in _children) {
         [solver solveForContainer:childContainer traitCollection:traitCollection];
         solver.originInParent = layoutOrigin;
 
@@ -94,7 +90,7 @@
     __block NSMutableArray<IBPUICollectionViewCompositionalLayoutAttributes *> *allAttributes;
     allAttributes = [[NSMutableArray alloc] init];
 
-    [_children enumerateObjectsUsingBlock:^(IBPCollectionViewHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
+    [_children enumerateObjectsUsingBlock:^(IBPHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
         if (CGRectIntersectsRect(solver.frame, localVisibleRect)) {
             [allAttributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:localVisibleRect
                                                                                sectionIndex:sectionIndex]];
@@ -103,7 +99,7 @@
 
     [allAttributes enumerateObjectsUsingBlock:^(IBPUICollectionViewCompositionalLayoutAttributes * _Nonnull attributes, NSUInteger idx, BOOL * _Nonnull stop) {
         CGRect frame = attributes.frame;
-        frame.origin = CGPointMake(frame.origin.x + _originInParent.x, frame.origin.y + _originInParent.y);
+        frame.origin = CGPointMake(frame.origin.x + self->_originInParent.x, frame.origin.y + self->_originInParent.y);
         attributes.frame = frame;
     }];
 
@@ -119,7 +115,7 @@
     NSInteger solverIndex = 0;
 
     for (solverIndex = 0; solverIndex < _children.count; solverIndex++) {
-        IBPCollectionViewHierarchicalSolver *solver = _children[solverIndex];
+        IBPHierarchicalSolver *solver = _children[solverIndex];
 
         if (NSLocationInRange(itemIndex, solver.locationInSection)) {
             delta = [solver setPreferredSize:preferredSize forItemAtIndex:itemIndex];
@@ -129,7 +125,7 @@
 
     if (!CGVectorEqual(delta, CGVectorZero)) {
         for (NSInteger i = solverIndex + 1; i < _children.count; i++) {
-            IBPCollectionViewHierarchicalSolver *solver = _children[i];
+            IBPHierarchicalSolver *solver = _children[i];
 
             switch (_layoutAxis) {
                 case UICollectionViewScrollDirectionHorizontal:
@@ -144,7 +140,7 @@
         // Recompute the bounds.
         CGRect bounds = CGRectZero;
 
-        for (IBPCollectionViewHierarchicalSolver *solver in _children) {
+        for (IBPHierarchicalSolver *solver in _children) {
             bounds = CGRectUnion(bounds, solver.frame);
         }
 
@@ -166,8 +162,8 @@
     for (NSInteger i = 0; i < numberOfMateralizedGroups; i++) {
         NSRange localRange = NSIntersectionRange(NSMakeRange(i * leafItemCount, leafItemCount), NSMakeRange(0, count));
 
-        IBPCollectionViewHierarchicalSolver *childSolver;
-        childSolver = [IBPCollectionViewHierarchicalSolver solverWithLayoutItem:group
+        IBPHierarchicalSolver *childSolver;
+        childSolver = [IBPHierarchicalSolver solverWithLayoutItem:group
                                                               locationInSection:localRange];
         [children addObject:childSolver];
     }

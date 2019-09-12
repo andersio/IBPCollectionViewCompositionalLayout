@@ -1,5 +1,4 @@
 #import "IBPUICollectionViewCompositionalLayout.h"
-#import "IBPCollectionCompositionalLayoutSolver.h"
 #import "IBPCollectionViewOrthogonalScrollerEmbeddedScrollView.h"
 #import "IBPCollectionViewOrthogonalScrollerSectionController.h"
 #import "IBPNSCollectionLayoutAnchor_Private.h"
@@ -16,17 +15,17 @@
 #import "IBPNSCollectionLayoutSupplementaryItem_Private.h"
 #import "IBPUICollectionViewCompositionalLayoutConfiguration_Private.h"
 #import "IBPUICollectionViewCompositionalLayoutAttributes.h"
-#import <objc/runtime.h>
-#import "IBPCollectionViewHierarchicalSolver.h"
-#import "IBPCollectionViewHierarchicalSectionSolver.h"
+#import "IBPHierarchicalSolver.h"
+#import "IBPSectionSolver.h"
 #import "CGVectorExtensions.h"
+#import "UICollectionReusableView+Swizzing.h"
 
 typedef IBPUICollectionViewCompositionalLayoutAttributes LayoutAttributes;
 NSInteger BoundaryItemIndex = 0;
 
 @interface IBPUICollectionViewCompositionalLayout()<UICollectionViewDelegate> {
 
-    NSMutableArray<IBPCollectionViewHierarchicalSectionSolver *> *sectionSolvers;
+    NSMutableArray<IBPSectionSolver *> *sectionSolvers;
 
     CGRect contentFrame;
     NSMutableDictionary<NSNumber *, IBPCollectionViewOrthogonalScrollerSectionController *> *orthogonalScrollerSectionControllers;
@@ -49,18 +48,7 @@ NSInteger BoundaryItemIndex = 0;
 @implementation IBPUICollectionViewCompositionalLayout
 
 +(void)initialize {
-    // Who doesn't love swizzling?
-
-    SEL canonicalSelector = @selector(preferredLayoutAttributesFittingAttributes:);
-    SEL newImplSelector = @selector(ibp_configurablePreferredLayoutAttributesFittingAttributes:);
-    SEL originalImplSelector = @selector(ibp_originalPreferredLayoutAttributesFittingAttributes:);
-
-    Method method = class_getInstanceMethod([UICollectionReusableView class], canonicalSelector);
-    char *types = method_getTypeEncoding(method);
-    class_replaceMethod([UICollectionReusableView class], originalImplSelector, method_getImplementation(method), types);
-
-    IMP newImpl = class_getMethodImplementation([UICollectionReusableView class], newImplSelector);
-    class_replaceMethod([UICollectionReusableView class], canonicalSelector, newImpl, types);
+    [UICollectionReusableView ibp_swizzle];
 }
 
 - (instancetype)initWithSection:(IBPNSCollectionLayoutSection *)section {
@@ -209,8 +197,8 @@ NSInteger BoundaryItemIndex = 0;
 
         NSInteger numberOfItems = [collectionView numberOfItemsInSection:sectionIndex];
 
-        IBPCollectionViewHierarchicalSectionSolver *sectionRootSolver;
-        sectionRootSolver = [IBPCollectionViewHierarchicalSectionSolver solverWithLayoutSection:layoutSection
+        IBPSectionSolver *sectionRootSolver;
+        sectionRootSolver = [IBPSectionSolver solverWithLayoutSection:layoutSection
                                                                                      layoutAxis:self.scrollDirection
                                                                                   numberOfItems:numberOfItems];
         [sectionRootSolver solveForContainer:collectionContainer
@@ -421,7 +409,7 @@ NSInteger BoundaryItemIndex = 0;
     attributes = [[NSMutableArray alloc] init];
 
     NSInteger section = -1;
-    for (IBPCollectionViewHierarchicalSectionSolver *solver in sectionSolvers) {
+    for (IBPSectionSolver *solver in sectionSolvers) {
         section += 1;
 
         if (!CGRectIntersectsRect(solver.frame, rect)) {
@@ -481,7 +469,7 @@ NSInteger BoundaryItemIndex = 0;
         }
 
         for (NSInteger i = indexPath.section + 1; i < sectionSolvers.count; i++) {
-            IBPCollectionViewHierarchicalSectionSolver *solver = sectionSolvers[i];
+            IBPSectionSolver *solver = sectionSolvers[i];
 
             switch (self.scrollDirection) {
                 case UICollectionViewScrollDirectionVertical:
@@ -514,10 +502,10 @@ NSInteger BoundaryItemIndex = 0;
 
 - (CGPoint)orthogonalContentOffsetForProposedContentOffset:(CGPoint)proposedContentOffset
                                          scrollingVelocity:(CGPoint)velocity {
-    IBPCollectionCompositionalLayoutSolver *solver;
+    IBPSectionSolver *solver = sectionSolvers.lastObject;
     CGPoint contentOffset = CGPointZero;
 
-    CGRect layoutFrame = solver.layoutFrame;
+    CGRect layoutFrame = solver.frame;
     CGFloat interGroupSpacing = solver.layoutSection.interGroupSpacing;
 
     CGFloat width = CGRectGetWidth(layoutFrame);
