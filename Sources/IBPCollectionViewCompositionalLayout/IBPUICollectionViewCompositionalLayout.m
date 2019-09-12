@@ -233,16 +233,18 @@ NSArray<LayoutAttributes *> * _Nonnull SearchMinEdgeAlignedElements(NSArray<Layo
         sectionRootSolver = [IBPCollectionViewHierarchicalSectionSolver solverWithLayoutSection:layoutSection
                                                                                      layoutAxis:self.scrollDirection
                                                                                   numberOfItems:numberOfItems];
-        [sectionRootSolver solveForProposedRect:CGRectMake(sectionOrigin.x, sectionOrigin.y, collectionViewBounds.size.width, collectionViewBounds.size.height)
-                                traitCollection:collectionView.traitCollection];
+        [sectionRootSolver solveForContainer:collectionContainer
+                             traitCollection:collectionView.traitCollection];
         [sectionSolvers addObject:sectionRootSolver];
+
+        sectionRootSolver.originInParent = sectionOrigin;
 
         switch (self.scrollDirection) {
             case UICollectionViewScrollDirectionVertical:
-                contentFrame.size.height += sectionRootSolver.frame.size.height;
+                contentFrame.size.height += sectionRootSolver.solvedSize.height;
                 break;
             case UICollectionViewScrollDirectionHorizontal:
-                contentFrame.size.width += sectionRootSolver.frame.size.width;
+                contentFrame.size.width += sectionRootSolver.solvedSize.width;
                 break;
         }
 
@@ -260,11 +262,11 @@ NSArray<LayoutAttributes *> * _Nonnull SearchMinEdgeAlignedElements(NSArray<Layo
             if (self.scrollDirection == UICollectionViewScrollDirectionVertical) {
                 scrollViewFrame.origin.y = sectionOrigin.y + layoutSection.contentInsets.top;
                 scrollViewFrame.size.width = collectionContainer.contentSize.width;
-                scrollViewFrame.size.height = MIN(sectionRootSolver.frame.size.height, collectionContainer.contentSize.height);
+                scrollViewFrame.size.height = MIN(sectionRootSolver.solvedSize.height, collectionContainer.contentSize.height);
             }
             if (self.scrollDirection == UICollectionViewScrollDirectionHorizontal) {
                 scrollViewFrame.origin.x = sectionOrigin.x + layoutSection.contentInsets.leading;
-                scrollViewFrame.size.width = MIN(sectionRootSolver.frame.size.width, collectionContainer.contentSize.width);
+                scrollViewFrame.size.width = MIN(sectionRootSolver.solvedSize.width, collectionContainer.contentSize.width);
                 scrollViewFrame.size.height = collectionContainer.contentSize.height;
             }
             scrollView.frame = scrollViewFrame;

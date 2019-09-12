@@ -13,7 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSMutableArray<IBPCollectionViewHierarchicalSolver *> *children;
 
 // Frame (in parent coordinate space).
-@property (nonatomic) CGRect frame;
+@property (nonatomic) CGSize solvedSize;
+@property (nonatomic) CGPoint originInParent;
+@property (nonatomic, readonly) CGRect frame;
 
 @property (nonatomic) UICollectionViewScrollDirection layoutAxis;
 
@@ -21,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
                             layoutAxis:(UICollectionViewScrollDirection)layoutAxis
                          numberOfItems:(NSInteger)numberOfItems;
 
-- (void)solveForProposedRect:(CGRect)container
+- (void)solveForContainer:(IBPNSCollectionLayoutContainer *)container
              traitCollection:(UITraitCollection *)traitCollection;
 
 - (void)setPreferredSize:(CGRect)preferredSize forItemAtIndex:(NSInteger)itemIndex;

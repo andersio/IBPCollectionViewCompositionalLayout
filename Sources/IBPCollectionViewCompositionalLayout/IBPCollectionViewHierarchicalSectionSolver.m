@@ -15,8 +15,8 @@
 @interface IBPCollectionViewHierarchicalSectionSolver (Private)
 
 -(void)createChildrenForCount:(NSInteger)count;
--(void)solveItemForProposedRect:(CGRect)proposedRect traitCollection:(UITraitCollection *)traitCollection;
--(void)solveGroup:(IBPNSCollectionLayoutGroup*)group forProposedRect:(CGRect)proposedRect traitCollection:(UITraitCollection *)traitCollection;
+-(void)solveItemForProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
+-(void)solveGroup:(IBPNSCollectionLayoutGroup*)group forProposedRect:(CGSize)proposedSize traitCollection:(UITraitCollection *)traitCollection;
 
 @end
 
@@ -37,44 +37,65 @@
     return solver;
 }
 
--(void)solveForProposedRect:(CGRect)proposedRect traitCollection:(UITraitCollection *)traitCollection {
-    CGPoint origin = proposedRect.origin;
-    CGRect finalFrame = CGRectMake(origin.x, origin.y, 0.0, 0.0);
+-(CGRect)frame {
+    return CGRectMake(_originInParent.x, _originInParent.y, _solvedSize.width, _solvedSize.height);
+}
+
+-(void)solveForContainer:(IBPNSCollectionLayoutContainer *)container traitCollection:(UITraitCollection *)traitCollection {
+    CGSize containerSize = container.effectiveContentSize;
+
+    IBPNSCollectionLayoutContainer *childContainer;
+    childContainer = [[IBPNSCollectionLayoutContainer alloc] initWithContentSize:container.effectiveContentSize contentInsets:IBPNSDirectionalEdgeInsetsZero];
+
+    CGPoint layoutOrigin = CGPointZero;
+    CGRect finalBounds = CGRectZero;
 
     for (IBPCollectionViewHierarchicalSolver *solver in _children) {
-        CGRect childRect = CGRectMake(origin.x, origin.y, proposedRect.size.width, proposedRect.size.height);
-        [solver solveForProposedRect:childRect traitCollection:traitCollection];
+        [solver solveForContainer:childContainer traitCollection:traitCollection];
+        solver.originInParent = layoutOrigin;
+
+        CGSize solvedSize = solver.solvedSize;
 
         switch (_layoutAxis) {
             case UICollectionViewScrollDirectionVertical:
-                origin.y += solver.frame.size.height;
+                layoutOrigin.y += solvedSize.height;
                 break;
             case UICollectionViewScrollDirectionHorizontal:
-                origin.x += solver.frame.size.width;
+                layoutOrigin.x += solvedSize.width;
                 break;
         }
 
-        finalFrame = CGRectUnion(finalFrame, solver.frame);
+        finalBounds = CGRectUnion(finalBounds, solver.frame);
     }
 
-    _frame = finalFrame;
+    _solvedSize = finalBounds.size;
 }
 
 -(NSArray<IBPUICollectionViewCompositionalLayoutAttributes *> *)layoutAttributesForItemInVisibleRect:(CGRect)rect
                                                                                            itemIndex:(NSInteger)itemIndex
                                                                                         sectionIndex:(NSInteger)sectionIndex {
+    CGRect localVisibleRect = rect;
+    localVisibleRect.origin.x -= _originInParent.x;
+    localVisibleRect.origin.y -= _originInParent.y;
+
     __block NSMutableArray<IBPUICollectionViewCompositionalLayoutAttributes *> *allAttributes;
     allAttributes = [[NSMutableArray alloc] init];
 
     __block NSInteger itemCursor = itemIndex;
 
     [_children enumerateObjectsUsingBlock:^(IBPCollectionViewHierarchicalSolver * _Nonnull solver, NSUInteger idx, BOOL * _Nonnull stop) {
-        if (CGRectIntersectsRect(solver.frame, rect)) {
-            [allAttributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:rect
+        if (CGRectIntersectsRect(solver.frame, localVisibleRect)) {
+            [allAttributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:localVisibleRect
                                                                                   itemIndex:itemCursor
                                                                                sectionIndex:sectionIndex]];
             itemCursor += solver.layoutItem.leafItemCount;
         }
+    }];
+
+    [allAttributes enumerateObjectsUsingBlock:^(IBPUICollectionViewCompositionalLayoutAttributes * _Nonnull attributes, NSUInteger idx, BOOL * _Nonnull stop) {
+        CGRect frame = attributes.frame;
+        frame.origin = CGPointMake(frame.origin.x + _originInParent.x, frame.origin.y + _originInParent.y);
+        attributes.frame = frame;
     }];
 
     return allAttributes;
