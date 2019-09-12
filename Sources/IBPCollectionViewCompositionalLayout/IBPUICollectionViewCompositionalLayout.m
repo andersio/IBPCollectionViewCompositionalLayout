@@ -585,7 +585,9 @@ NSArray<LayoutAttributes *> * _Nonnull SearchMinEdgeAlignedElements(NSArray<Layo
                 break;
         }
 
-        [attributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:rect forSectionAtIndex:section]];
+        if (!solver.layoutSection.scrollsOrthogonally) {
+            [attributes addObjectsFromArray:[solver layoutAttributesForItemInVisibleRect:rect forSectionAtIndex:section]];
+        }
     }
 
     return attributes;

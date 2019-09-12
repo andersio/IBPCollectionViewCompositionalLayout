@@ -28,8 +28,20 @@
     IBPCollectionViewHierarchicalSectionSolver *solver = [[self alloc] init];
 
     if (solver) {
-        solver->_layoutAxis = layoutAxis;
         solver.layoutSection = layoutSection;
+
+        if (layoutSection.scrollsOrthogonally) {
+            switch (layoutAxis) {
+                case UICollectionViewScrollDirectionVertical:
+                    solver->_layoutAxis = UICollectionViewScrollDirectionHorizontal;
+                    break;
+                case UICollectionViewScrollDirectionHorizontal:
+                    solver->_layoutAxis = UICollectionViewScrollDirectionVertical;
+                    break;
+            }
+        } else {
+            solver->_layoutAxis = layoutAxis;
+        }
 
         [solver createChildrenForCount:numberOfItems];
     }
