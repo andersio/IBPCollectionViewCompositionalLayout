@@ -79,6 +79,10 @@
     return [self.layoutSize effectiveSizeForContainer:container ignoringInsets:NO];
 }
 
+- (NSInteger)leafItemCount {
+    return 1;
+}
+
 - (void)enumerateItemsWithHandler:(void (^__nonnull)(IBPNSCollectionLayoutItem * _Nonnull item, BOOL *stop))handler {
     BOOL stop = NO;
     handler(self, &stop);

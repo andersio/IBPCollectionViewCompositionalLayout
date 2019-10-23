@@ -33,6 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (id<IBPNSCollectionLayoutContainer>)containerForParentContainer:(id<IBPNSCollectionLayoutContainer>)container;
 - (CGSize)insetSizeForContainer:(id<IBPNSCollectionLayoutContainer>)container;
 
+- (NSInteger)leafItemCount;
 - (void)enumerateItemsWithHandler:(void (^__nonnull)(IBPNSCollectionLayoutItem * _Nonnull item, BOOL *stop))handler;
 - (void)enumerateSupplementaryItemsWithHandler:(void (^__nonnull)(IBPNSCollectionLayoutSupplementaryItem * _Nonnull supplementaryItem, BOOL *stop))handler;
 
